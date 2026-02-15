@@ -50,35 +50,3 @@ enum class Orientation {
     BottomStart,
     BootomEnd;
 }
-
-//@Stable
-//val leftButtonShape = ButtonShape(Orientation.Start)
-//
-//@Stable
-//val rightButtonShape = ButtonShape(Orientation.End)
-//
-//@Stable
-//class ButtonShape(private val orientation: Orientation = Orientation.Start) : Shape {
-//        override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
-//            Outline.Generic(path = buttonPath(size = size, orientation = orientation))
-//}
-//
-//@Stable
-//private fun buttonPath(size: Size, orientation: Orientation) : Path =  Path().apply {
-//    when(orientation) {
-//        Orientation.Start -> {
-//            lineTo(x = size.width, y = size.height / 4)
-//            lineTo(x = size.width, y = size.height)
-//            lineTo(x = 0f, y = size.height * 3/4)
-//        }
-//        Orientation.End -> {
-//            moveTo(x = size.width, y = 0f)
-//
-//            lineTo(x = size.width, y = size.height * 3/4)
-//            lineTo(x = 0f, y = size.height)
-//            lineTo(x = 0f , y = size.height / 4)
-//        }
-//    }
-//
-//    close()
-//}

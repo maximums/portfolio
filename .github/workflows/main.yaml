@@ -2,7 +2,7 @@ name: KMP Wasm Workflow
 
 on:
   push:
-    branches: [ "main.yaml" ]
+    branches: [ "main" ]
     paths:
       - "!**.md"
 
