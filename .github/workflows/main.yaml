@@ -2,7 +2,7 @@ name: KMP Wasm Workflow
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main.yaml" ]
     paths:
       - "!**.md"
 
@@ -16,9 +16,9 @@ jobs:
       - name: Setup environment
         uses: actions/setup-java@v3
         with:
-            distribution: 'temurin'
-            java-version: '17'
-            cache: gradle
+          distribution: 'temurin'
+          java-version: '17'
+          cache: gradle
 
       - name: Setup pages
         id: pages
