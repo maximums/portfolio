@@ -20,6 +20,13 @@ import kotlinx.browser.document
 import org.jetbrains.skia.*
 import org.jetbrains.skia.Paint
 
+sealed class Screen {
+    data object Home : Screen()
+    data object About : Screen()
+    data object Contacts : Screen()
+    data object Sketch : Screen()
+}
+
 fun main() {
     ComposeViewport(document.body!!) {
         App()
@@ -29,11 +36,19 @@ fun main() {
 @Composable
 private fun App() {
     val time by iTime
-    val runtimeEffect = remember { RuntimeEffect.makeForShader(Shaders.wetNeuralNetwork) }
-    var isInCenter by remember { mutableStateOf(true) }
+    val shaderSource by rememberShader("bokeh")
 
     MaterialTheme {
-        LookaheadScope {
+        AppContent(shaderSource, time)
+    }
+}
+
+@Composable
+private fun AppContent(shaderSource: String, time: Float) {
+    val runtimeEffect = remember(shaderSource) { RuntimeEffect.makeForShader(shaderSource) }
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
+
+    LookaheadScope {
             BoxWithConstraints(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -62,28 +77,28 @@ private fun App() {
                 val homeButton = movableButton(
                     text = "Home",
                     orientation = Orientation.TopStart,
-                    onClick = { isInCenter = !isInCenter }
+                    onClick = { currentScreen = Screen.Home }
                 )
 
                 val aboutButton = movableButton(
                     text = "About",
                     orientation = Orientation.TopEnd,
-                    onClick = { isInCenter = !isInCenter }
+                    onClick = { currentScreen = Screen.About }
                 )
 
                 val contactsButton = movableButton(
                     text = "Contacts",
                     orientation = Orientation.BottomStart,
-                    onClick = { isInCenter = !isInCenter }
+                    onClick = { currentScreen = Screen.Contacts }
                 )
 
                 val sketchButton = movableButton(
                     text = "Sketch",
                     orientation = Orientation.BootomEnd,
-                    onClick = { isInCenter = !isInCenter }
+                    onClick = { currentScreen = Screen.Sketch }
                 )
 
-                if (isInCenter) {
+                if (currentScreen == Screen.Home) {
                     CenterMenuForm {
                         homeButton(Modifier.size(200.dp, 250.dp))
                         aboutButton(Modifier.size(200.dp, 250.dp))
@@ -97,11 +112,23 @@ private fun App() {
                         contactsButton(Modifier.size(300.dp, 100.dp))
                         sketchButton(Modifier.size(300.dp, 100.dp))
                     }
+
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(top = 120.dp)
+                    ) {
+                        when (currentScreen) {
+                            Screen.About -> AboutPage()
+                            Screen.Contacts -> ContactsPage()
+                            Screen.Sketch -> SketchPage()
+                            Screen.Home -> {}
+                        }
+                    }
                 }
             }
         }
     }
-}
 
 @Composable
 fun movableButton(
@@ -143,4 +170,19 @@ private fun BoxScope.TopBarForm(content: @Composable () -> Unit) {
     ) {
         content()
     }
+}
+
+@Composable
+private fun AboutPage() {
+    Text("About Page", fontSize = 24.sp, color = Color.White)
+}
+
+@Composable
+private fun ContactsPage() {
+    Text("Contacts Page", fontSize = 24.sp, color = Color.White)
+}
+
+@Composable
+private fun SketchPage() {
+    Text("Sketch Page", fontSize = 24.sp, color = Color.White)
 }

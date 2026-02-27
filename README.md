@@ -6,7 +6,7 @@ A concrete list of tasks that need to be completed
 - [ ] Main Menu
   - [ ] Modifier for Shape Morphing
   - [ ] Modifier for Movable Composables
-- [ ] Move Shaders to resource files
+- [x] Move Shaders to resource files
 
 #### 2. Pages
 

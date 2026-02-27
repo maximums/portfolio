@@ -4,6 +4,7 @@ import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.produceState
+import kotlinx.coroutines.isActive
 import org.jetbrains.skia.Data
 import org.jetbrains.skiko.currentNanoTime
 
@@ -13,7 +14,7 @@ val iTime: State<Float>
     @Composable get() = produceState(0f) {
         val startTime = currentNanoTime()
 
-        while (true) {
+        while (isActive) {
             withInfiniteAnimationFrameNanos {
                 value = (it - startTime) / ONE_SECOND_NANOS
             }

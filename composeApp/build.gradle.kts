@@ -33,7 +33,8 @@ kotlin {
         optIn = listOf(
             "androidx.compose.ui.ExperimentalComposeUiApi",
             "androidx.compose.animation.core.ExperimentalAnimatableApi",
-            "androidx.compose.foundation.layout.ExperimentalLayoutApi"
+            "androidx.compose.foundation.layout.ExperimentalLayoutApi",
+            "org.jetbrains.compose.resources.ExperimentalResourceApi",
         )
     }
 
