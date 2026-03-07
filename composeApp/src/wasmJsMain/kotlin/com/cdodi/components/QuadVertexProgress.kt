@@ -2,6 +2,7 @@ package com.cdodi.components
 
 import androidx.compose.animation.core.AnimationVector4D
 import androidx.compose.animation.core.TwoWayConverter
+import androidx.compose.ui.Alignment
 
 data class QuadVertexProgress(
     val topStart: Float,
@@ -11,18 +12,28 @@ data class QuadVertexProgress(
 )
 
 enum class MorphingShape(
-    val topStart: Float,
-    val topEnd: Float,
-    val bottomEnd: Float,
-    val bottomStart: Float,
+    private val topStart: Float,
+    private val topEnd: Float,
+    private val bottomEnd: Float,
+    private val bottomStart: Float,
 ) {
     Rectangle(0f, 1f, 1f, 0f),
+    Rhombus(0.5f, 0.5f, 0.5f, 0.5f),
     TriangleTopStart(0f, 1f, 0f, 0f),
     TriangleTopEnd(0f, 1f, 1f, 1f),
     TriangleBottomStart(0f, 0f, 1f, 0f),
     TriangleBottomEnd(1f, 1f, 1f, 0f);
 
     fun toVertexesProgress() = QuadVertexProgress(topStart, topEnd, bottomEnd, bottomStart)
+
+    val contentAlignment: Alignment
+        get() = when (this) {
+            Rectangle, Rhombus -> Alignment.Center
+            TriangleTopStart -> Alignment.TopStart
+            TriangleTopEnd -> Alignment.TopEnd
+            TriangleBottomStart -> Alignment.BottomStart
+            TriangleBottomEnd -> Alignment.BottomEnd
+        }
 }
 
 val VertexesProgressToVector: TwoWayConverter<QuadVertexProgress, AnimationVector4D> =
