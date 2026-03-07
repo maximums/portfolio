@@ -10,12 +10,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
-import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.unit.Constraints
@@ -74,10 +71,9 @@ class MorphingShapeModifierNode(
         val placeable = measurable.measure(constraints)
 
         return layout(placeable.width, placeable.height) {
-            // placeWithLayer gives us direct, 0-recomposition access to the GraphicsLayer!
             placeable.placeWithLayer(0, 0) {
                 shape = nodeShape
-                clip = true // This single line fixes both your visuals AND your clickable area!
+                clip = true
             }
         }
     }

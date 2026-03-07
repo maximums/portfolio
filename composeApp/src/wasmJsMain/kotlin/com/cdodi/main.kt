@@ -1,6 +1,10 @@
 package com.cdodi
 
-import androidx.compose.foundation.Image
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -9,24 +13,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.ComposeViewport
-import blog.composeapp.generated.resources.Res
-import blog.composeapp.generated.resources.desktop_transparent
-import blog.composeapp.generated.resources.laptop
 import com.cdodi.components.*
+import com.cdodi.pages.AboutPage
+import com.cdodi.pages.BoidsPage
 import com.cdodi.pages.GameOfLifePage
+import com.cdodi.pages.SmallScreenPage
 import kotlinx.browser.document
-import org.jetbrains.compose.resources.painterResource
 
-sealed class Screen {
-    data object Home : Screen()
-    data object About : Screen()
-    data object Contacts : Screen()
-    data object GameOfLife : Screen()
+enum class Screen {
+    Home,
+    About,
+    Boids,
+    GameOfLife,
 }
 
 fun main() {
@@ -59,49 +61,8 @@ private fun App() {
 }
 
 @Composable
-private fun SmallScreenPage() {
-    val desktopImg = painterResource(Res.drawable.desktop_transparent)
-    val laptopImg = painterResource(Res.drawable.laptop)
-
-    Column(
-        modifier = Modifier.fillMaxSize().padding(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Box(
-            modifier = Modifier.width(80.vw)
-        ) {
-            Image(
-                painter = desktopImg,
-                contentDescription = "Image of Desktop",
-                contentScale = ContentScale.Fit,
-                alpha = 0.8f,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .fillMaxWidth(),
-            )
-            Image(
-                painter = laptopImg,
-                contentDescription = "Image of laptop",
-                contentScale = ContentScale.Fit,
-                alpha = 0.8f,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .fillMaxWidth(.4f),
-            )
-        }
-
-        Text(
-            text = "For full experience please open on larger screens",
-            color = Color.White,
-            fontSize = 14.sp,
-        )
-    }
-}
-
-@Composable
 private fun LookaheadScope.AppContent() {
-    var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
+    var currentScreen by remember { mutableStateOf(Screen.Home) }
     val cardModifier = Modifier.size(15.vw)
     val homeButton = movableCard(
         text = "Home",
@@ -112,8 +73,8 @@ private fun LookaheadScope.AppContent() {
         onClick = { currentScreen = Screen.About }
     )
     val contactsButton = movableCard(
-        text = "Contacts",
-        onClick = { currentScreen = Screen.Contacts }
+        text = "Boids",
+        onClick = { currentScreen = Screen.Boids }
     )
     val sketchButton = movableCard(
         text = "Game Of Life",
@@ -148,10 +109,29 @@ private fun LookaheadScope.AppContent() {
             }
 
             bodyCard(
-                Modifier.fillMaxWidth().height(1000.dp).align(Alignment.BottomCenter),
+                Modifier.fillMaxWidth().height(85f.vh).align(Alignment.BottomCenter),
                 MorphingShape.Rectangle
             ) {
-                GameOfLifePage()
+                AnimatedContent(
+                    targetState = currentScreen,
+                    contentKey = { it },
+                    transitionSpec = {
+                        if (targetState.ordinal > initialState.ordinal) {
+                            slideInHorizontally(tween(400)) { width -> width } togetherWith
+                                    slideOutHorizontally(tween(400)) { width -> -width }
+                        } else {
+                            slideInHorizontally(tween(400)) { width -> -width } togetherWith
+                                    slideOutHorizontally(tween(400)) { width -> width }
+                        }
+                    }
+                ) {
+                    when(currentScreen) {
+                        Screen.About -> AboutPage()
+                        Screen.Boids -> BoidsPage()
+                        Screen.GameOfLife -> GameOfLifePage()
+                        Screen.Home -> Unit
+                    }
+                }
             }
         }
     }
@@ -162,18 +142,8 @@ private fun BoxScope.TopBarForm(content: @Composable () -> Unit) {
     Row(
         modifier = Modifier.align(Alignment.TopCenter),
         verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         content()
     }
-}
-
-@Composable
-private fun AboutPage() {
-    Text("About Page", fontSize = 24.sp, color = Color.White)
-}
-
-@Composable
-private fun ContactsPage() {
-    Text("Contacts Page", fontSize = 24.sp, color = Color.White)
 }
