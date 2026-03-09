@@ -3,8 +3,11 @@ package com.cdodi.pages
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +23,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cdodi.data.gameoflife.Cell
@@ -35,10 +39,27 @@ fun GameOfLifePage() {
         gameOfLifeManager.loop()
     }
 
-    Box(
+    Column(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.Start
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            Button(onClick = gameOfLifeManager::playPause) {
+                Text("Start")
+            }
+
+            Text(
+                text = "Population: ${cells.value.size}",
+                color = Color.White,
+                fontSize = 20.sp
+            )
+        }
+
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -53,10 +74,6 @@ fun GameOfLifePage() {
         ) {
             drawAliveCells(cells.value)
             drawGrid()
-        }
-
-        Button(onClick = gameOfLifeManager::playPause) {
-            Text("Start")
         }
     }
 }

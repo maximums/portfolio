@@ -1,10 +1,21 @@
 package com.cdodi
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Transition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -13,16 +24,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RenderEffect
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.window.ComposeViewport
+import blog.composeapp.generated.resources.Res
+import blog.composeapp.generated.resources.*
 import com.cdodi.components.*
 import com.cdodi.pages.AboutPage
 import com.cdodi.pages.BoidsPage
 import com.cdodi.pages.GameOfLifePage
 import com.cdodi.pages.SmallScreenPage
 import kotlinx.browser.document
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.skia.Image
+import org.jetbrains.skia.ImageFilter
+import org.jetbrains.skia.RuntimeEffect
+import org.jetbrains.skia.RuntimeShaderBuilder
 
 enum class Screen {
     Home,
@@ -33,9 +56,52 @@ enum class Screen {
 
 fun main() {
     ComposeViewport(document.body!!) {
+//        TestSKSL()
         App()
     }
 }
+
+//@Composable
+//private fun TestSKSL() {
+//    val testImg = painterResource(Res.drawable.virus_cell_transparent)
+//    val runtimeEffect = remember { RuntimeEffect.makeForShader(PIXEL_MELT_SHADER) }
+//    val transition = rememberInfiniteTransition()
+//    val progress by transition.animateFloat(
+//        initialValue = 0f,
+//        targetValue = 1f,
+//        animationSpec = infiniteRepeatable(
+//            animation = tween(durationMillis = 3000, easing = LinearEasing),
+//            repeatMode = RepeatMode.Reverse
+//        )
+//    )
+//
+//    Box(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .graphicsLayer {
+//                val builder = RuntimeShaderBuilder(runtimeEffect).apply {
+//                    uniform("resolution", size.width, size.height)
+//                    uniform("progress", progress)
+//                }
+//                val skiaImageFilter = ImageFilter.makeRuntimeShader(
+//                    runtimeShaderBuilder = builder,
+//                    shaderName = "composable",
+//                    input = null
+//                )
+//
+//                renderEffect = skiaImageFilter.asComposeRenderEffect()
+//                clip = true
+//            }
+//    ) {
+//        Image(
+//            painter = testImg,
+//            contentDescription = "Image of Desktop",
+//            contentScale = ContentScale.Fit,
+//            alpha = 1f,
+//            modifier = Modifier.align(Alignment.Center)
+//        )
+//    }
+//}
 
 @Composable
 private fun App() {
@@ -63,6 +129,14 @@ private fun App() {
 @Composable
 private fun LookaheadScope.AppContent() {
     var currentScreen by remember { mutableStateOf(Screen.Home) }
+
+    val pixelMeltEffect = remember { RuntimeEffect.makeForShader(PIXEL_MELT_SHADER) }
+    val transition: Transition<Screen> = updateTransition(
+        targetState = currentScreen,
+        label = "ScreenRouter"
+    )
+    val transitionTest = rememberInfiniteTransition()
+
     val cardModifier = Modifier.size(15.vw)
     val homeButton = movableCard(
         text = "Home",
@@ -109,29 +183,71 @@ private fun LookaheadScope.AppContent() {
             }
 
             bodyCard(
-                Modifier.fillMaxWidth().height(85f.vh).align(Alignment.BottomCenter),
+                Modifier.fillMaxWidth().height(80f.vh).align(Alignment.BottomCenter),
                 MorphingShape.Rectangle
             ) {
-                AnimatedContent(
-                    targetState = currentScreen,
-                    contentKey = { it },
+                transition.AnimatedContent(
                     transitionSpec = {
-                        if (targetState.ordinal > initialState.ordinal) {
-                            slideInHorizontally(tween(400)) { width -> width } togetherWith
-                                    slideOutHorizontally(tween(400)) { width -> -width }
-                        } else {
-                            slideInHorizontally(tween(400)) { width -> -width } togetherWith
-                                    slideOutHorizontally(tween(400)) { width -> width }
+                        fadeIn(tween(durationMillis = 2000)) togetherWith fadeOut(tween(durationMillis = 2000))
+                    },
+                    contentKey = { it }
+                ) { targetScreen ->
+                    val meltProgress by transition.animateFloat(
+                        transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
+                        label = "Melting progress"
+                    ) { state ->
+                        if (state == targetScreen) 0f else 1f
+                    }
+
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                            .graphicsLayer {
+                                val isGoingForward = transition.targetState.ordinal > targetScreen.ordinal
+                                val dirX = if (isGoingForward) -1.0f else 1.0f
+                                val builder = RuntimeShaderBuilder(pixelMeltEffect).apply {
+                                    uniform("resolution", size.width, size.height)
+                                    uniform("progress", meltProgress)
+                                    uniform("direction", dirX, 0.2f)
+                                }
+                                val skiaImageFilter = ImageFilter.makeRuntimeShader(
+                                    runtimeShaderBuilder = builder,
+                                    shaderName = "composable",
+                                    input = null
+                                )
+
+                                renderEffect = skiaImageFilter.asComposeRenderEffect()
+                            }
+                    ) {
+                        // Render your actual pages inside the shaded Box
+                        when(targetScreen) {
+                            Screen.About -> AboutPage()
+                            Screen.Boids -> BoidsPage()
+                            Screen.GameOfLife -> GameOfLifePage()
+                            Screen.Home -> Unit
                         }
                     }
-                ) {
-                    when(currentScreen) {
-                        Screen.About -> AboutPage()
-                        Screen.Boids -> BoidsPage()
-                        Screen.GameOfLife -> GameOfLifePage()
-                        Screen.Home -> Unit
-                    }
                 }
+
+//                AnimatedContent(
+//                    targetState = currentScreen,
+//                    contentKey = { it },
+//                    transitionSpec = {
+//                        if (targetState.ordinal > initialState.ordinal) {
+//                            slideInHorizontally(tween(400)) { width -> width } togetherWith
+//                                    slideOutHorizontally(tween(400)) { width -> -width }
+//                        } else {
+//                            slideInHorizontally(tween(400)) { width -> -width } togetherWith
+//                                    slideOutHorizontally(tween(400)) { width -> width }
+//                        }
+//                    }
+//                ) {
+//                    when(currentScreen) {
+//                        Screen.About -> AboutPage()
+//                        Screen.Boids -> BoidsPage()
+//                        Screen.GameOfLife -> GameOfLifePage()
+//                        Screen.Home -> Unit
+//                    }
+//                }
             }
         }
     }

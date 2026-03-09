@@ -41,7 +41,7 @@ class GameOfLifeManager : EvolutionEngine {
     }
 
     fun addCell(offset: Offset) {
-        if (isRunning.value) return // user can't modify population when the game is running
+        if (isRunning.value) return // user can't modify population when the game is running | need to add a UI indication when game is running
 
         val x = (offset.x / CELL_SIZE_PX).toInt()
         val y = (offset.y / CELL_SIZE_PX).toInt()
