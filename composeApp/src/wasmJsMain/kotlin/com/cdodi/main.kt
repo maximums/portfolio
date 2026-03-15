@@ -46,6 +46,7 @@ import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageFilter
 import org.jetbrains.skia.RuntimeEffect
 import org.jetbrains.skia.RuntimeShaderBuilder
+import org.w3c.dom.events.Event
 
 enum class Screen {
     Home,
@@ -55,53 +56,14 @@ enum class Screen {
 }
 
 fun main() {
+//    document.addEventListener("DOMContentLoaded") { event: Event ->
+//        event.
+//    }
     ComposeViewport(document.body!!) {
-//        TestSKSL()
         App()
+//        AboutPage()
     }
 }
-
-//@Composable
-//private fun TestSKSL() {
-//    val testImg = painterResource(Res.drawable.virus_cell_transparent)
-//    val runtimeEffect = remember { RuntimeEffect.makeForShader(PIXEL_MELT_SHADER) }
-//    val transition = rememberInfiniteTransition()
-//    val progress by transition.animateFloat(
-//        initialValue = 0f,
-//        targetValue = 1f,
-//        animationSpec = infiniteRepeatable(
-//            animation = tween(durationMillis = 3000, easing = LinearEasing),
-//            repeatMode = RepeatMode.Reverse
-//        )
-//    )
-//
-//    Box(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .graphicsLayer {
-//                val builder = RuntimeShaderBuilder(runtimeEffect).apply {
-//                    uniform("resolution", size.width, size.height)
-//                    uniform("progress", progress)
-//                }
-//                val skiaImageFilter = ImageFilter.makeRuntimeShader(
-//                    runtimeShaderBuilder = builder,
-//                    shaderName = "composable",
-//                    input = null
-//                )
-//
-//                renderEffect = skiaImageFilter.asComposeRenderEffect()
-//                clip = true
-//            }
-//    ) {
-//        Image(
-//            painter = testImg,
-//            contentDescription = "Image of Desktop",
-//            contentScale = ContentScale.Fit,
-//            alpha = 1f,
-//            modifier = Modifier.align(Alignment.Center)
-//        )
-//    }
-//}
 
 @Composable
 private fun App() {
@@ -160,7 +122,7 @@ private fun LookaheadScope.AppContent() {
         if (currentScreen == Screen.Home) {
             MainMenu(
                 body = {
-                    bodyCard(Modifier.size(20.vw).align(Alignment.Center), MorphingShape.Rhombus) {
+                    bodyCard(Modifier.size(20.vw).align(Alignment.Center), MorphingShape.Rhombus, false) {
                         Text(
                             text = "Welcome",
                             fontSize = 30.sp, color = Color(0xa0_5a_d6_ff),
@@ -184,7 +146,8 @@ private fun LookaheadScope.AppContent() {
 
             bodyCard(
                 Modifier.fillMaxWidth().height(80f.vh).align(Alignment.BottomCenter),
-                MorphingShape.Rectangle
+                MorphingShape.Rectangle,
+                true
             ) {
                 transition.AnimatedContent(
                     transitionSpec = {

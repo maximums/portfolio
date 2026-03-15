@@ -8,6 +8,7 @@ import androidx.compose.runtime.produceState
 import blog.composeapp.generated.resources.Res
 import com.cdodi.components.RuntimeShader
 
+// language=agsl
 private const val FALLBACK_SHADER = """
     uniform int width;
     uniform int height;
@@ -19,6 +20,7 @@ private const val FALLBACK_SHADER = """
 """
 
 // TODO need to test it first
+// language=agsl
 const val PIXEL_MELT_SHADER = """
     uniform float2 resolution;
     uniform float progress;
