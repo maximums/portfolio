@@ -58,6 +58,6 @@ val LocalIsSmallWindow = compositionLocalWithComputedDefaultOf {
         val width = windowInfo.containerSize.width.toDp()
         val height = windowInfo.containerSize.height.toDp()
 
-        width < 800.dp || height < 800.dp
+        width < 600.dp || height < 600.dp
     }
 }
