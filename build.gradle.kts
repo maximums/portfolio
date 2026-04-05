@@ -5,3 +5,6 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
 }
+
+group = "com.cdodi"
+version = "0.1.0"

@@ -1,7 +1,10 @@
 rootProject.name = "blog"
+
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
+    includeBuild("plugins")
+
     repositories {
         google {
             mavenContent {

@@ -1,14 +1,11 @@
 [versions]
 androidx-lifecycle = "2.8.4"
-compose-multiplatform = "1.7.3"
-junit = "4.13.2"
-kotlin = "2.1.0"
+compose-multiplatform = "1.10.3"
+kotlin = "2.3.20"
+antlr = "4.13.1"
 
 [libraries]
-kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-
+antlr = { group = "org.antlr", name = "antlr4", version.ref = "antlr" }
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 

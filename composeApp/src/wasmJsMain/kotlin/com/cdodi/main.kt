@@ -2,20 +2,14 @@ package com.cdodi
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -24,29 +18,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RenderEffect
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastRoundToInt
-import androidx.compose.ui.window.ComposeViewport
-import blog.composeapp.generated.resources.Res
-import blog.composeapp.generated.resources.*
 import com.cdodi.components.*
 import com.cdodi.pages.AboutPage
 import com.cdodi.pages.BoidsPage
 import com.cdodi.pages.GameOfLifePage
 import com.cdodi.pages.SmallScreenPage
-import kotlinx.browser.document
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.skia.Image
+import com.cdodi.webgpu.prepareWebGPUCanvas
 import org.jetbrains.skia.ImageFilter
 import org.jetbrains.skia.RuntimeEffect
 import org.jetbrains.skia.RuntimeShaderBuilder
-import org.w3c.dom.events.Event
 
 enum class Screen {
     Home,
@@ -55,14 +40,12 @@ enum class Screen {
     GameOfLife,
 }
 
-fun main() {
-//    document.addEventListener("DOMContentLoaded") { event: Event ->
-//        event.
-//    }
-    ComposeViewport(document.body!!) {
-        App()
+suspend fun main() {
+    prepareWebGPUCanvas()
+//    ComposeViewport(document.body!!) {
+//        App()
 //        AboutPage()
-    }
+//    }
 }
 
 @Composable
@@ -190,27 +173,6 @@ private fun LookaheadScope.AppContent() {
                         }
                     }
                 }
-
-//                AnimatedContent(
-//                    targetState = currentScreen,
-//                    contentKey = { it },
-//                    transitionSpec = {
-//                        if (targetState.ordinal > initialState.ordinal) {
-//                            slideInHorizontally(tween(400)) { width -> width } togetherWith
-//                                    slideOutHorizontally(tween(400)) { width -> -width }
-//                        } else {
-//                            slideInHorizontally(tween(400)) { width -> -width } togetherWith
-//                                    slideOutHorizontally(tween(400)) { width -> width }
-//                        }
-//                    }
-//                ) {
-//                    when(currentScreen) {
-//                        Screen.About -> AboutPage()
-//                        Screen.Boids -> BoidsPage()
-//                        Screen.GameOfLife -> GameOfLifePage()
-//                        Screen.Home -> Unit
-//                    }
-//                }
             }
         }
     }
