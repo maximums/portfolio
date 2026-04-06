@@ -1,5 +1,7 @@
 package com.cdodi.webgpu
 
+import com.cdodi.webgpu.canvas.GPUCanvasConfiguration
+import com.cdodi.webgpu.canvas.createJsObject
 import com.cdodi.webgpu.canvas.getCanvasContext
 import com.cdodi.webgpu.canvas.prepareCanvasConfig
 import com.cdodi.webgpu.command.prepareRenderPassDescriptor
@@ -22,6 +24,7 @@ suspend fun prepareWebGPUCanvas() {
     val adapter = gpu.requestAdapter().await<GPUAdapter>()
     val device = adapter.requestDevice().await<Device>()
     val canvasFormat = gpu.getPreferredCanvasFormat()
+    val temp = createJsObject<GPUCanvasConfiguration>()
     val config = prepareCanvasConfig(device, canvasFormat)
     context.configure(config)
 
@@ -50,7 +53,7 @@ suspend fun prepareWebGPUCanvas() {
     val buffer = encoder.finish()
     device.queue.submit(arrayOf(buffer).toJsArray())
 
-    println("Got something:\n$context\n$gpu\n$adapter\n$device\n$canvasFormat")
+    println("Got something:\n$temp")
 }
 
 // language=WGSL
@@ -69,8 +72,3 @@ private const val myShader = """
     return vec4f(1.0, 0.0, 0.0, 1.0);
 }
 """
-
-@JsFun("({})")
-external fun createJsEmptyObject(): JsAny
-
-fun <T: JsAny> jsObj(): T = createJsEmptyObject().unsafeCast()

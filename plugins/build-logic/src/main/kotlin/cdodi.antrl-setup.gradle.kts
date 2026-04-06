@@ -26,12 +26,13 @@ val downloadWebGpuGrammar = tasks.register<DownloadWebGrammarTask>("downloadWebG
     grammarFile.fileProvider(grammarProvider)
 }
 
-val antlrTask = tasks.named("generateGrammarSource") {
+tasks.generateGrammarSource {
     dependsOn(downloadWebGpuGrammar)
+    arguments = arguments + listOf("-visitor", "-long-messages")
 }
 
 tasks.configureEach {
-    if (name == "compileKotlin") dependsOn(antlrTask)
+    if (name == "compileKotlin") dependsOn(tasks.generateGrammarSource)
 }
 
 repositories {

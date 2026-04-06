@@ -47,5 +47,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
         }
+
+        wasmJsMain.dependencies {
+            implementation(project(":webGpuRuntime"))
+        }
     }
 }

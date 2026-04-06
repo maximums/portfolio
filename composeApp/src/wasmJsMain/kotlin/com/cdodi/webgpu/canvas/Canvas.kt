@@ -11,6 +11,9 @@ external interface GPUCanvasContext : JsAny {
     fun configure(configuration: GPUCanvasConfiguration)
 }
 
+@JsFun("() => ({})")
+external fun <T: JsAny> createJsObject(): T
+
 @JsFun("(canvas) => canvas.getContext('webgpu')")
 external fun getCanvasContext(canvas: HTMLCanvasElement): GPUCanvasContext
 

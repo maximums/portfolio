@@ -13,6 +13,10 @@ repositories {
     gradlePluginPortal()
 }
 
+dependencies {
+    implementation(libs.kotlin.poet)
+}
+
 gradlePlugin {
     plugins {
         register("webGpuBindings") {
