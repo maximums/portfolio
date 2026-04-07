@@ -11,7 +11,7 @@ import java.net.URI
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
-//@CacheableTask
+@CacheableTask
 abstract class DownloadWebGpuIDLTask : DefaultTask() {
 
     @get:Input

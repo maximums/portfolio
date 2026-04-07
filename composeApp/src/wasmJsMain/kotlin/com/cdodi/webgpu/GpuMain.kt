@@ -1,59 +1,87 @@
 package com.cdodi.webgpu
 
-import com.cdodi.webgpu.canvas.GPUCanvasConfiguration
-import com.cdodi.webgpu.canvas.createJsObject
-import com.cdodi.webgpu.canvas.getCanvasContext
-import com.cdodi.webgpu.canvas.prepareCanvasConfig
-import com.cdodi.webgpu.command.prepareRenderPassDescriptor
-import com.cdodi.webgpu.core.Device
-import com.cdodi.webgpu.core.GPUAdapter
+//import com.cdodi.webgpu.canvas.GPUCanvasConfiguration
+//import com.cdodi.webgpu.canvas.createJsObject
+//import com.cdodi.webgpu.canvas.getCanvasContext
+//import com.cdodi.webgpu.canvas.prepareCanvasConfig
+//import com.cdodi.webgpu.command.prepareRenderPassDescriptor
+//import com.cdodi.webgpu.core.Device
+//import com.cdodi.webgpu.core.GPUAdapter
+//import com.cdodi.webgpu.core.gpu
+//import com.cdodi.webgpu.pipeline.fragmentState
+//import com.cdodi.webgpu.pipeline.prepareShaderModuleDescriptor
+//import com.cdodi.webgpu.pipeline.renderPipelineDescriptor
+//import com.cdodi.webgpu.pipeline.vertexState
+import com.cdodi.webgpu.bindings.GPUAdapter
+import com.cdodi.webgpu.bindings.GPUAutoLayoutMode
+import com.cdodi.webgpu.bindings.GPUCanvasConfiguration
+import com.cdodi.webgpu.bindings.GPUCanvasContext
+import com.cdodi.webgpu.bindings.GPUColorTargetState
+import com.cdodi.webgpu.bindings.GPUDevice
+import com.cdodi.webgpu.bindings.GPUFragmentState
+import com.cdodi.webgpu.bindings.GPULoadOp
+import com.cdodi.webgpu.bindings.GPURenderPassColorAttachment
+import com.cdodi.webgpu.bindings.GPURenderPassDescriptor
+import com.cdodi.webgpu.bindings.GPURenderPipelineDescriptor
+import com.cdodi.webgpu.bindings.GPUShaderModuleDescriptor
+import com.cdodi.webgpu.bindings.GPUStoreOp
+import com.cdodi.webgpu.bindings.GPUVertexState
 import com.cdodi.webgpu.core.gpu
-import com.cdodi.webgpu.pipeline.fragmentState
-import com.cdodi.webgpu.pipeline.prepareShaderModuleDescriptor
-import com.cdodi.webgpu.pipeline.renderPipelineDescriptor
-import com.cdodi.webgpu.pipeline.vertexState
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.coroutines.await
 import org.w3c.dom.HTMLCanvasElement
 
 suspend fun prepareWebGPUCanvas() {
     val canvas = document.getElementById("webgpu-canvas") as HTMLCanvasElement
-    val context = getCanvasContext(canvas)
+    val context = canvas.getContext("webgpu") as GPUCanvasContext
 
     val gpu = gpu() ?: return
-    val adapter = gpu.requestAdapter().await<GPUAdapter>()
-    val device = adapter.requestDevice().await<Device>()
+    val adapter = gpu.requestAdapter(null).await<GPUAdapter>()
+    val device = adapter.requestDevice(null).await<GPUDevice>()
     val canvasFormat = gpu.getPreferredCanvasFormat()
-    val temp = createJsObject<GPUCanvasConfiguration>()
-    val config = prepareCanvasConfig(device, canvasFormat)
+    val config = GPUCanvasConfiguration(
+        device = device,
+        format = canvasFormat,
+    )
     context.configure(config)
 
-    val shaderModuleDescriptor = prepareShaderModuleDescriptor(
-        label = "our hardcoded red triangle shaders",
-        code = myShader
-    )
+    val shaderModuleDescriptor = GPUShaderModuleDescriptor(code = myShader)
     val shaderModule = device.createShaderModule(shaderModuleDescriptor)
-    val vertex = vertexState(shaderModule, "vs")
-    val fragment = fragmentState(shaderModule, "fs", canvasFormat)
-    val pipelineDescriptor = renderPipelineDescriptor(
-        label = "our hardcoded red triangle pipeline",
-        layout = "auto".toJsString(),
+    val vertex = GPUVertexState(shaderModule )
+    val colorTarget = GPUColorTargetState(
+        format = canvasFormat,
+        blend = null,
+        writeMask = null
+    )
+    val fragment = GPUFragmentState(
+        targets = arrayOf(colorTarget).toJsArray(),
+        module = shaderModule
+    )
+    val pipelineDescriptor = GPURenderPipelineDescriptor(
         vertex = vertex,
-        fragment = fragment
+        layout = GPUAutoLayoutMode.AUTO.toJsString(),
+        fragment = fragment,
     )
     val pipeline = device.createRenderPipeline(pipelineDescriptor)
-
-    val descriptor = prepareRenderPassDescriptor(context)
-    val encoder = device.createCommandEncoder()
+    val renderPassColorAttachments = arrayOf(
+        GPURenderPassColorAttachment(
+            view = context.getCurrentTexture().createView(null),
+            loadOp = GPULoadOp.CLEAR,
+            storeOp = GPUStoreOp.STORE
+        )
+    )
+    val descriptor = GPURenderPassDescriptor(renderPassColorAttachments.toJsArray())
+    val encoder = device.createCommandEncoder(null)
     val pass = encoder.beginRenderPass(descriptor)
-    pass.setPipeline(pipeline)
-    pass.draw(3)
-    pass.end()
+//    pass.setPipeline(pipeline)
+//    pass.draw(3)
+//    pass.end()
+//
+//    val buffer = encoder.finish()
+//    device.queue.submit(arrayOf(buffer).toJsArray())
 
-    val buffer = encoder.finish()
-    device.queue.submit(arrayOf(buffer).toJsArray())
-
-    println("Got something:\n$temp")
+    println("Got something:")
 }
 
 // language=WGSL

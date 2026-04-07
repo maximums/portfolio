@@ -2,6 +2,7 @@ package com.cdodi
 
 import WebIDLLexer
 import WebIDLParser
+import com.cdodi.generation.SymbolCollectorVisitor
 import com.cdodi.generation.KotlinGenerator
 import com.squareup.kotlinpoet.FileSpec
 import org.antlr.v4.runtime.CharStreams
@@ -29,7 +30,15 @@ abstract class ParseWebGpuIdlTask : DefaultTask() {
         val tokens = CommonTokenStream(lexer)
         val parser = WebIDLParser(tokens)
         val tree = parser.webIDL()
-        val visitor = KotlinGenerator()
+
+        val enumCollector = SymbolCollectorVisitor()
+        enumCollector.visit(tree)
+        val visitor = KotlinGenerator(
+            enumCollector.knownEnumNames,
+            enumCollector.typeAliases,
+            enumCollector.dictionaryNodes,
+            enumCollector.includesMap,
+        )
         tree.accept(visitor)
 
         outputDir.mkdirs()
@@ -45,10 +54,6 @@ abstract class ParseWebGpuIdlTask : DefaultTask() {
 
         fileBuilder.build().writeTo(outputDir)
         factoriesFileBuilder.build().writeTo(outputDir)
-
-        logger.lifecycle("WebGPU Interfaces:\n${fileBuilder.build()}")
-        logger.lifecycle("------------------------------------------")
-        logger.lifecycle("WebGPU Factories:\n${factoriesFileBuilder.build()}")
     }
 }
 

@@ -14,6 +14,7 @@ repositories {
 }
 
 dependencies {
+    compileOnly(kotlin("gradle-plugin"))
     implementation(libs.kotlin.poet)
 }
 
