@@ -29,8 +29,12 @@ abstract class ParseWebGpuIdlTask : DefaultTask() {
 
     @TaskAction
     operator fun invoke() {
-        val outputDir = outputDirectory.get().asFile
         val idlFile = webGpuIdlFile.get().asFile
+        val outputDir = outputDirectory.get().asFile.also { dir ->
+            if (dir.exists()) dir.deleteRecursively()
+            dir.mkdirs()
+        }
+
         val lexer = WebIDLLexer(CharStreams.fromFileName(idlFile.absolutePath))
         val tokens = CommonTokenStream(lexer)
         val parser = WebIDLParser(tokens)
@@ -39,38 +43,16 @@ abstract class ParseWebGpuIdlTask : DefaultTask() {
 
         val typeResolver = TypeResolver()
         val membersCollector = InterfaceCollector(typeResolver)
-        val symbolCollector = SymbolCollectorVisitor(sematicContext, membersCollector).also { it.visit(tree) }
-//        println(sematicContext[BindingSlices.INTERFACE])
+        SymbolCollectorVisitor(sematicContext, membersCollector).also { it.visit(tree) }
+
         val generator = KotlinGenerator(
             bindingContext = sematicContext,
             typeResolver = typeResolver,
             generatedPackageName = "com.cdodi.webgpu.bindings"
         )
+        val fileSpec = generator.buildFileSpec(tree, "WebGpuBindings")
 
-//        val visitor = KotlinGenerator(
-//            enumCollector.knownEnumNames,
-//            enumCollector.typeAliases,
-//            enumCollector.dictionaryNodes,
-//            enumCollector.includesMap,
-//        )
-//        tree.accept(visitor)
-
-        outputDir.mkdirs()
-        outputDir.deleteRecursively()
-//        val factoriesFile = File(outputDir, "WebGpuFactories.kt")
-//        val bindingFile = File(outputDir, "WebGpuBindings.kt")
-
-        val enums = tree.definitions().definition()
-        val fileBuilder = FileSpec.builder("com.cdodi.webgpu.bindings", "WebGpuBindings")
-        val spec = generator.visit(enums)
-        spec?.let { fileBuilder.addType(it) }
-//        val factoriesFileBuilder = FileSpec.builder("com.cdodi.webgpu.bindings", "WebGpuFactories")
-
-//        visitor.generatedTypes.forEach { typeSpec -> fileBuilder.addType(typeSpec) }
-//        visitor.generatedFunctions.forEach { functionSpec -> factoriesFileBuilder.addFunction(functionSpec) }
-
-        fileBuilder.build().writeTo(outputDir)
-//        factoriesFileBuilder.build().writeTo(outputDir)
+        fileSpec.writeTo(outputDir)
     }
 }
 

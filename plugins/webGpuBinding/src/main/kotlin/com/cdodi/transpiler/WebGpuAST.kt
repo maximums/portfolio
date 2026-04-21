@@ -1,18 +1,5 @@
 package com.cdodi.transpiler
 
-import com.cdodi.transpiler.BindingSlices.CUSTOM_TYPE
-import com.squareup.kotlinpoet.ANY
-import com.squareup.kotlinpoet.BOOLEAN
-import com.squareup.kotlinpoet.BYTE
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.DOUBLE
-import com.squareup.kotlinpoet.FLOAT
-import com.squareup.kotlinpoet.INT
-import com.squareup.kotlinpoet.LONG
-import com.squareup.kotlinpoet.STRING
-import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.UNIT
-
 private const val SLICE_DELIMITER = "\n---------------------------------------------------------------------------------------------------------------------\n"
 
 interface BindingContext {
@@ -26,10 +13,11 @@ class MutableBidingContext : BindingContext {
         storage.getOrPut(slice) { mutableMapOf() }[key] = value
     }
 
+    operator fun get(slice: Slice<*, *>): Map<Any, Any>? = storage[slice]
+
     @Suppress("UNCHECKED_CAST")
     override fun <K, V> get(slice: Slice<K, V>, key: K): V? = storage[slice]?.get(key as Any) as? V
 
-    operator fun get(slice: Slice<*, *>): Map<Any, Any>? = storage[slice]
 
     override fun toString(): String = storage.entries.joinToString(separator = SLICE_DELIMITER) { entry ->
         "${entry.key.name} -- ${entry.value.entries.joinToString(separator = "\n")}"

@@ -1,8 +1,6 @@
 package com.cdodi.transpiler
 
 import WebIDLBaseVisitor
-import com.cdodi.transpiler.BindingSlices.CUSTOM_TYPE
-import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.*
 
@@ -18,28 +16,43 @@ class KotlinGenerator(
     private val bindingContext: BindingContext,
     private val typeResolver: TypeResolver,
     private val generatedPackageName: String,
-) : WebIDLBaseVisitor<TypeSpec?>() {
+) : WebIDLBaseVisitor<List<TypeSpec>>() {
 
-    override fun visitIncludesStatement(ctx: WebIDLParser.IncludesStatementContext): TypeSpec? {
+    fun buildFileSpec(tree: WebIDLParser.WebIDLContext, fileName: String = "WebGpuBindings"): FileSpec {
+        val fileBuilder = FileSpec.builder(generatedPackageName, fileName)
+        val allGeneratedTypes = visit(tree)
+
+        allGeneratedTypes.forEach { typeSpec -> fileBuilder.addType(typeSpec) }
+
+        return fileBuilder.build()
+    }
+
+    override fun defaultResult(): List<TypeSpec> = emptyList()
+
+    override fun aggregateResult(aggregate: List<TypeSpec>, nextResult: List<TypeSpec>) = aggregate + nextResult
+
+    override fun visitIncludesStatement(ctx: WebIDLParser.IncludesStatementContext): List<TypeSpec> {
         val targetClassName = ctx.IDENTIFIER_WEBIDL(0)?.text ?: return super.visitIncludesStatement(ctx)
         val mixinName = ctx.IDENTIFIER_WEBIDL(1)?.text ?: return super.visitIncludesStatement(ctx)
         val targetClass = bindingContext[BindingSlices.INTERFACE, targetClassName] ?: return super.visitIncludesStatement(ctx)
         val mixin = bindingContext[BindingSlices.FAKE_INTERFACE, mixinName]
         val result = targetClass + mixin
+        val typeSpec = result.asPoet(bindingContext, generatedPackageName)
 
-        return result.asPoet(bindingContext, generatedPackageName)
+        return listOf(typeSpec)
     }
 
-    override fun visitInterfaceRest(ctx: WebIDLParser.InterfaceRestContext): TypeSpec? {
+    override fun visitInterfaceRest(ctx: WebIDLParser.InterfaceRestContext): List<TypeSpec> {
         val name = ctx.IDENTIFIER_WEBIDL()?.text?.trim() ?: return super.visitInterfaceRest(ctx)
         val target = bindingContext[BindingSlices.INTERFACE, name] ?: return super.visitInterfaceRest(ctx)
         val partial = bindingContext[BindingSlices.PARTIAL_INTERFACE, name]
         val result = target + partial
+        val typeSpec = result.asPoet(bindingContext, generatedPackageName)
 
-        return result.asPoet(bindingContext, generatedPackageName)
+        return listOf(typeSpec)
     }
 
-    override fun visitEnum_(ctx: WebIDLParser.Enum_Context): TypeSpec? {
+    override fun visitEnum_(ctx: WebIDLParser.Enum_Context): List<TypeSpec> {
         val enumName = ctx.IDENTIFIER_WEBIDL()?.text?.trim() ?: return super.visitEnum_(ctx)
         val enumEntries = ctx.enumValueList()?.text.orEmpty()
             .split(",")
@@ -56,7 +69,15 @@ class KotlinGenerator(
                 }
             }.build()
 
-        return enum
+        return listOf(enum)
+    }
+
+    override fun visitTypedef_(ctx: WebIDLParser.Typedef_Context): List<TypeSpec> {
+        val name = ctx.IDENTIFIER_WEBIDL()?.text ?: return super.visitTypedef_(ctx)
+        val typeDescriptor = typeResolver.visit(ctx) ?: return super.visitTypedef_(ctx)
+        val type = typeDescriptor.mapPrimitiveType(bindingContext, generatedPackageName)
+        val typeSpec = TypeAliasSpec.builder(name, type).build()
+        return listOf(typeSpec)
     }
 }
 
@@ -77,3 +98,5 @@ class KotlinGenerator(
 //        arguments = arguments.arguments()
 //    }
 //}
+
+typealias myLong = Long

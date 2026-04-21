@@ -17,6 +17,7 @@ import com.squareup.kotlinpoet.STRING
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.UNIT
+import org.gradle.declarative.dsl.schema.FqName.Empty.packageName
 
 fun Descriptor.InterfaceDescriptor.asPoet(context: BindingContext, generatedPackageName: String): TypeSpec {
     val builder = if (isAbstractClass) {
@@ -26,6 +27,10 @@ fun Descriptor.InterfaceDescriptor.asPoet(context: BindingContext, generatedPack
     }
 
     builder.addModifiers(KModifier.EXTERNAL)
+
+    val superTypes = superTypes
+        .map { superType -> ClassName(packageName, superType) }
+        .ifEmpty { setOf(ClassName("kotlin.js", "JsAny")) }
 
     val variables = members.filterIsInstance<InterfaceMember.VariableDescriptor>().map { variable ->
         variable.asPoet(context, generatedPackageName)
@@ -46,7 +51,11 @@ fun Descriptor.InterfaceDescriptor.asPoet(context: BindingContext, generatedPack
         }
     }
 
-    return builder.addProperties(variables).addFunctions(functions).build()
+    return builder
+        .addSuperinterfaces(superTypes)
+        .addProperties(variables)
+        .addFunctions(functions)
+        .build()
 }
 
 fun InterfaceMember.VariableDescriptor.asPoet(context: BindingContext, generatedPackageName: String) =
@@ -54,6 +63,11 @@ fun InterfaceMember.VariableDescriptor.asPoet(context: BindingContext, generated
         .also { if (defaultValue != null) it.initializer("%S", defaultValue) }
         .build()
 
+fun Descriptor.TypeDescriptor.asPoet(context: BindingContext, generatedPackageName: String) {
+    val finalType = context[CUSTOM_TYPE, name]?.let { typeName ->
+        unionMembers?.map { it.asPoet(context, generatedPackageName) }
+    } ?: mapPrimitiveType(context, generatedPackageName)
+}
 
 fun Descriptor.TypeDescriptor.mapPrimitiveType(context: BindingContext, generatedPackageName: String): TypeName =
     when (name) {
@@ -65,5 +79,5 @@ fun Descriptor.TypeDescriptor.mapPrimitiveType(context: BindingContext, generate
         "boolean" -> BOOLEAN
         "DOMString", "USVString", "ByteString" -> STRING
         "void", "undefined" -> UNIT
-        else -> if (context[CUSTOM_TYPE, name] != null) ClassName(generatedPackageName, name) else ANY
+        else -> ANY
     }.copy(nullable = isNullable)
