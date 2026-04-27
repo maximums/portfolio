@@ -4,10 +4,12 @@ import WebIDLLexer
 import WebIDLParser
 import com.cdodi.transpiler.BindingSlices
 import com.cdodi.transpiler.InterfaceCollector
-import com.cdodi.transpiler.KotlinGenerator
+//import com.cdodi.transpiler.KotlinGenerator
 import com.cdodi.transpiler.SymbolCollectorVisitor
 import com.cdodi.transpiler.MutableBidingContext
 import com.cdodi.transpiler.TypeResolver
+import com.cdodi.transpiler.generateKotlin
+import com.cdodi.transpiler.resolveSemantics
 import com.squareup.kotlinpoet.FileSpec
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -43,16 +45,26 @@ abstract class ParseWebGpuIdlTask : DefaultTask() {
 
         val typeResolver = TypeResolver()
         val membersCollector = InterfaceCollector(typeResolver)
-        SymbolCollectorVisitor(sematicContext, membersCollector).also { it.visit(tree) }
+        SymbolCollectorVisitor(sematicContext, membersCollector, typeResolver).also { it.visit(tree) }
+        resolveSemantics(sematicContext)
 
-        val generator = KotlinGenerator(
-            bindingContext = sematicContext,
-            typeResolver = typeResolver,
-            generatedPackageName = "com.cdodi.webgpu.bindings"
+        println(sematicContext)
+        val fileSpecs = generateKotlin(
+            sematicContext,
+            "com.cdodi.webgpu.bindings",
+            "WebGpuBindings",
+            "WebGpuFactories",
         )
-        val fileSpec = generator.buildFileSpec(tree, "WebGpuBindings")
+        fileSpecs.forEach { fileSpec -> fileSpec.writeTo(outputDir)}
 
-        fileSpec.writeTo(outputDir)
+//        val generator = KotlinGenerator(
+//            bindingContext = sematicContext,
+//            typeResolver = typeResolver,
+//            generatedPackageName = "com.cdodi.webgpu.bindings"
+//        )
+//        val fileSpec = generator.buildFileSpec(tree, "WebGpuBindings")
+//
+//        fileSpec.writeTo(outputDir)
     }
 }
 

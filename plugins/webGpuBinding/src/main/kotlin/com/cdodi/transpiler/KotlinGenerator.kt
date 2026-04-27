@@ -12,74 +12,73 @@ private val jsNumberClassName = ClassName("kotlin.js", "JsNumber")
 private val jsBooleanClassName = ClassName("kotlin.js", "JsBoolean")
 private val jsPromiseClassName = ClassName("kotlin.js", "Promise")
 
-class KotlinGenerator(
-    private val bindingContext: BindingContext,
-    private val typeResolver: TypeResolver,
-    private val generatedPackageName: String,
-) : WebIDLBaseVisitor<List<TypeSpec>>() {
+//class KotlinGenerator(
+//    private val bindingContext: BindingContext,
+//    private val typeResolver: TypeResolver,
+//    private val generatedPackageName: String,
+//) : WebIDLBaseVisitor<List<TypeSpec>>() {
+//
+//    fun buildFileSpec(tree: WebIDLParser.WebIDLContext, fileName: String = "WebGpuBindings"): FileSpec {
+//        val fileBuilder = FileSpec.builder(generatedPackageName, fileName)
+//        val allGeneratedTypes = visit(tree)
+//
+//        allGeneratedTypes.forEach { typeSpec -> fileBuilder.addType(typeSpec) }
+//
+//        return fileBuilder.build()
+//    }
+//
+//    override fun defaultResult(): List<TypeSpec> = emptyList()
+//
+//    override fun aggregateResult(aggregate: List<TypeSpec>, nextResult: List<TypeSpec>) = aggregate + nextResult
+//
+//    override fun visitInterfaceRest(ctx: WebIDLParser.InterfaceRestContext): List<TypeSpec> {
+//        val name = ctx.IDENTIFIER_WEBIDL()?.text?.trim() ?: return super.visitInterfaceRest(ctx)
+//        val target = bindingContext[BindingSlices.INTERFACE, name] ?: return super.visitInterfaceRest(ctx)
+//        val partial = bindingContext[BindingSlices.PARTIAL_INTERFACE, name]
+//        val result = target + partial
+////        val typeSpec = result.asPoet(bindingContext, generatedPackageName)
+//
+//        return listOf(typeSpec)
+//    }
+//
+//    override fun visitEnum_(ctx: WebIDLParser.Enum_Context): List<TypeSpec> {
+//        val enumName = ctx.IDENTIFIER_WEBIDL()?.text?.trim() ?: return super.visitEnum_(ctx)
+//        val enumEntries = ctx.enumValueList()?.text.orEmpty()
+//            .split(",")
+//            .filterNot(predicate = String::isBlank)
+//            .map { entry -> entry.trim().removeSurrounding(delimiter = "\"") }
+//        val enum = TypeSpec.objectBuilder(enumName)
+//            .addModifiers(KModifier.INTERNAL)
+//            .also { builder ->
+//                enumEntries.forEach { entry ->
+//                    val property = PropertySpec.builder(name = entry, type = STRING, KModifier.CONST, KModifier.INTERNAL)
+//                        .initializer("%S", entry)
+//                        .build()
+//                    builder.addProperty(propertySpec = property)
+//                }
+//            }.build()
+//
+//        return listOf(enum)
+//    }
+//
+//    override fun visitDictionary(ctx: WebIDLParser.DictionaryContext): List<TypeSpec> {
+//        val name = ctx.IDENTIFIER_WEBIDL()?.text?.trim() ?: return super.visitDictionary(ctx)
+//        val target = bindingContext[BindingSlices.DICTIONARY, name] ?: return super.visitDictionary(ctx)
+//        val partial = bindingContext[BindingSlices.PARTIAL_DICTIONARY, name]
+//        val result = target + partial
+//        val typeSpec = result.asPoet(bindingContext, generatedPackageName)
+//
+//        return listOf(typeSpec)
+//    }
 
-    fun buildFileSpec(tree: WebIDLParser.WebIDLContext, fileName: String = "WebGpuBindings"): FileSpec {
-        val fileBuilder = FileSpec.builder(generatedPackageName, fileName)
-        val allGeneratedTypes = visit(tree)
-
-        allGeneratedTypes.forEach { typeSpec -> fileBuilder.addType(typeSpec) }
-
-        return fileBuilder.build()
-    }
-
-    override fun defaultResult(): List<TypeSpec> = emptyList()
-
-    override fun aggregateResult(aggregate: List<TypeSpec>, nextResult: List<TypeSpec>) = aggregate + nextResult
-
-    override fun visitIncludesStatement(ctx: WebIDLParser.IncludesStatementContext): List<TypeSpec> {
-        val targetClassName = ctx.IDENTIFIER_WEBIDL(0)?.text ?: return super.visitIncludesStatement(ctx)
-        val mixinName = ctx.IDENTIFIER_WEBIDL(1)?.text ?: return super.visitIncludesStatement(ctx)
-        val targetClass = bindingContext[BindingSlices.INTERFACE, targetClassName] ?: return super.visitIncludesStatement(ctx)
-        val mixin = bindingContext[BindingSlices.FAKE_INTERFACE, mixinName]
-        val result = targetClass + mixin
-        val typeSpec = result.asPoet(bindingContext, generatedPackageName)
-
-        return listOf(typeSpec)
-    }
-
-    override fun visitInterfaceRest(ctx: WebIDLParser.InterfaceRestContext): List<TypeSpec> {
-        val name = ctx.IDENTIFIER_WEBIDL()?.text?.trim() ?: return super.visitInterfaceRest(ctx)
-        val target = bindingContext[BindingSlices.INTERFACE, name] ?: return super.visitInterfaceRest(ctx)
-        val partial = bindingContext[BindingSlices.PARTIAL_INTERFACE, name]
-        val result = target + partial
-        val typeSpec = result.asPoet(bindingContext, generatedPackageName)
-
-        return listOf(typeSpec)
-    }
-
-    override fun visitEnum_(ctx: WebIDLParser.Enum_Context): List<TypeSpec> {
-        val enumName = ctx.IDENTIFIER_WEBIDL()?.text?.trim() ?: return super.visitEnum_(ctx)
-        val enumEntries = ctx.enumValueList()?.text.orEmpty()
-            .split(",")
-            .filterNot(predicate = String::isBlank)
-            .map { entry -> entry.trim().removeSurrounding(delimiter = "\"") }
-        val enum = TypeSpec.objectBuilder(enumName)
-            .addModifiers(KModifier.INTERNAL)
-            .also { builder ->
-                enumEntries.forEach { entry ->
-                    val property = PropertySpec.builder(name = entry, type = STRING, KModifier.CONST, KModifier.INTERNAL)
-                        .initializer("%S", entry)
-                        .build()
-                    builder.addProperty(propertySpec = property)
-                }
-            }.build()
-
-        return listOf(enum)
-    }
-
-    override fun visitTypedef_(ctx: WebIDLParser.Typedef_Context): List<TypeSpec> {
-        val name = ctx.IDENTIFIER_WEBIDL()?.text ?: return super.visitTypedef_(ctx)
-        val typeDescriptor = typeResolver.visit(ctx) ?: return super.visitTypedef_(ctx)
-        val type = typeDescriptor.mapPrimitiveType(bindingContext, generatedPackageName)
-        val typeSpec = TypeAliasSpec.builder(name, type).build()
-        return listOf(typeSpec)
-    }
-}
+//    override fun visitTypedef_(ctx: WebIDLParser.Typedef_Context): List<TypeSpec> {
+//        val name = ctx.IDENTIFIER_WEBIDL()?.text ?: return super.visitTypedef_(ctx)
+//        val typeDescriptor = typeResolver.visit(ctx) ?: return super.visitTypedef_(ctx)
+//        val type = typeDescriptor.mapPrimitiveType(bindingContext, generatedPackageName)
+//        val typeSpec = TypeAliasSpec.builder(name, type).build()
+//        return listOf(typeSpec)
+//    }
+//}
 
 //private fun WebIDLParser.ArgumentListContext.addConstructor(builder: TypeSpec.Builder) {
 //    argument()?.argumentRest()?.let { arg ->

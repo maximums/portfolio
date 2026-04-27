@@ -4,10 +4,12 @@ compose-multiplatform = "1.10.3"
 kotlin = "2.3.20"
 antlr = "4.13.1"
 poet = "2.0.0"
+browser = "0.3.0"
 
 [libraries]
 antlr = { group = "org.antlr", name = "antlr4", version.ref = "antlr" }
 kotlin-poet = { group = "com.squareup", name = "kotlinpoet", version.ref = "poet"}
+kotlin-browser = { group = "org.jetbrains.kotlinx", name = "kotlinx-browser", version.ref = "browser"}
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 

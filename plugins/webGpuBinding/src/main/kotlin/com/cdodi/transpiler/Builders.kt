@@ -1,83 +1,136 @@
 package com.cdodi.transpiler
 
-import com.cdodi.transpiler.BindingSlices.CUSTOM_TYPE
-import com.squareup.kotlinpoet.ANY
-import com.squareup.kotlinpoet.BOOLEAN
-import com.squareup.kotlinpoet.BYTE
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.DOUBLE
-import com.squareup.kotlinpoet.FLOAT
 import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.LONG
+import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.STRING
-import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.UNIT
-import org.gradle.declarative.dsl.schema.FqName.Empty.packageName
 
-fun Descriptor.InterfaceDescriptor.asPoet(context: BindingContext, generatedPackageName: String): TypeSpec {
-    val builder = if (isAbstractClass) {
+fun Descriptor.InterfaceDescriptor.asInterfacePoet(context: BindingContext, generatedPackageName: String): TypeSpec {
+    val interfaceBuilder = if (isAbstractClass) {
         TypeSpec.classBuilder(name).addModifiers(KModifier.ABSTRACT)
     } else {
         TypeSpec.interfaceBuilder(name)
     }
+    interfaceBuilder.addModifiers(KModifier.EXTERNAL)
 
-    builder.addModifiers(KModifier.EXTERNAL)
-
-    val superTypes = superTypes
-        .map { superType -> ClassName(packageName, superType) }
-        .ifEmpty { setOf(ClassName("kotlin.js", "JsAny")) }
-
-    val variables = members.filterIsInstance<InterfaceMember.VariableDescriptor>().map { variable ->
-        variable.asPoet(context, generatedPackageName)
+    superTypes.forEach { superName ->
+        interfaceBuilder.addSuperinterface(ClassName(generatedPackageName, superName))
     }
-    val functions = members.filterIsInstance<InterfaceMember.FunctionDescriptor>().map { function ->
-        val parameters = function.parameters.map { param ->
-            ParameterSpec.builder(param.name, param.type.mapPrimitiveType(context, generatedPackageName))
-                .also { if (param.defaultValue != null) it.defaultValue(param.defaultValue) }
-                .build()
-        }
-        if (function.name == "constructor") {
-            FunSpec.constructorBuilder().addParameters(parameters).build()
+
+    members.filterIsInstance<InterfaceMember.VariableDescriptor>().forEach { variable ->
+        val typeName = variable.type.asPoetJs(context, generatedPackageName)
+        interfaceBuilder.addProperty(
+            PropertySpec.builder(variable.name, typeName).mutable(true).build()
+        )
+    }
+
+    members.filterIsInstance<InterfaceMember.FunctionDescriptor>().forEach { function ->
+        val funBuilder = if (function.name == "constructor") {
+            FunSpec.constructorBuilder()
         } else {
-            FunSpec.builder(function.name)
-                .returns(function.returnType.mapPrimitiveType(context, generatedPackageName))
-                .addParameters(parameters)
+            FunSpec.builder(function.name).returns(function.returnType.asPoetJs(context, generatedPackageName))
+        }
+
+        function.parameters.forEach { param ->
+            val paramSpec = ParameterSpec.builder(param.name, param.type.asPoetJs(context, generatedPackageName))
+                .also { if (param.defaultValue != null) it.defaultValue("definedExternally") }
                 .build()
+            funBuilder.addParameter(paramSpec)
+        }
+        interfaceBuilder.addFunction(funBuilder.build())
+    }
+
+    return interfaceBuilder.build()
+}
+
+
+fun Descriptor.InterfaceDescriptor.asDictionaryPoet(context: BindingContext, generatedPackageName: String): TypeSpec {
+//    val interfaceBuilder = TypeSpec.classBuilder(name)
+    val interfaceBuilder = TypeSpec.interfaceBuilder(name)
+//        .addModifiers(KModifier.ABSTRACT, KModifier.EXTERNAL)
+        .addModifiers(KModifier.EXTERNAL)
+        .addSuperinterface(ClassName("kotlin.js", "JsAny"))
+
+    members.filterIsInstance<InterfaceMember.VariableDescriptor>().forEach { variable ->
+        val typeName = variable.type.asPoetJs(context, generatedPackageName).copy(nullable = true)
+        interfaceBuilder.addProperty(
+            PropertySpec.builder(variable.name, typeName)
+                .mutable(true)
+//                .also { if (variable.defaultValue != null) it.initializer("definedExternally") }
+                .build()
+        )
+    }
+
+    return interfaceBuilder.build()
+}
+
+fun Descriptor.InterfaceDescriptor.dictFactory(
+    context: BindingContext,
+    generatedPackageName: String,
+): FunSpec {
+    val createJsObjectMember = MemberName("com.cdodi.webgpu", "createJsObject")
+    val className = ClassName(generatedPackageName, name)
+    val factoryBuilder = FunSpec.builder(name).returns(className)
+
+    members.filterIsInstance<InterfaceMember.VariableDescriptor>().forEach { variable ->
+        val typeName = variable.type.asPoetKt(context, generatedPackageName)
+        val paramBuilder = ParameterSpec.builder(variable.name, typeName)
+
+        if (variable.defaultValue != null) {
+//            paramBuilder.defaultValue("definedExternally")
+//        } else if (typeName.isNullable) {
+            paramBuilder.defaultValue("null")
+        }
+
+        factoryBuilder.addParameter(paramBuilder.build())
+    }
+
+    factoryBuilder.beginControlFlow("return %M", createJsObjectMember)
+
+    members.filterIsInstance<InterfaceMember.VariableDescriptor>().forEach { variable ->
+        val typeName = variable.type.asPoetKt(context, generatedPackageName)
+        val member = typeName.conversionBridge
+        if (member != null) {
+            factoryBuilder.addStatement("this.%N = %M", variable.name, member)
+        } else {
+            factoryBuilder.addStatement("this.%N = %N", variable.name, variable.name)
         }
     }
 
-    return builder
-        .addSuperinterfaces(superTypes)
-        .addProperties(variables)
-        .addFunctions(functions)
-        .build()
+    factoryBuilder.endControlFlow()
+
+    return factoryBuilder.build()
 }
 
-fun InterfaceMember.VariableDescriptor.asPoet(context: BindingContext, generatedPackageName: String) =
-    PropertySpec.builder(name, type.mapPrimitiveType(context, generatedPackageName))
-        .also { if (defaultValue != null) it.initializer("%S", defaultValue) }
-        .build()
 
-fun Descriptor.TypeDescriptor.asPoet(context: BindingContext, generatedPackageName: String) {
-    val finalType = context[CUSTOM_TYPE, name]?.let { typeName ->
-        unionMembers?.map { it.asPoet(context, generatedPackageName) }
-    } ?: mapPrimitiveType(context, generatedPackageName)
+fun Descriptor.EnumDescriptor.asEnumPoet(): TypeSpec {
+    val interfaceBuilder = TypeSpec.interfaceBuilder(name)
+        .addModifiers(KModifier.SEALED, KModifier.EXTERNAL)
+        .addSuperinterface(ClassName("kotlin.js", "JsAny"))
+
+    return interfaceBuilder.build()
 }
 
-fun Descriptor.TypeDescriptor.mapPrimitiveType(context: BindingContext, generatedPackageName: String): TypeName =
-    when (name) {
-        "byte", "octet" -> BYTE
-        "short", "unsignedshort" -> INT
-        "long", "unsignedlong", "longlong", "unsignedlonglong" -> LONG
-        "float", "unrestrictedfloat" -> FLOAT
-        "double", "unrestricteddouble" -> DOUBLE
-        "boolean" -> BOOLEAN
-        "DOMString", "USVString", "ByteString" -> STRING
-        "void", "undefined" -> UNIT
-        else -> ANY
-    }.copy(nullable = isNullable)
+fun Descriptor.EnumDescriptor.enumFactory(generatedPackageName: String): TypeSpec {
+    val className = ClassName(generatedPackageName, name)
+    val objectName = "${name}Entries"
+    val objectBuilder = TypeSpec.objectBuilder(objectName)
+    val toJsStringMember = MemberName("kotlin.js", "toJsString")
+    values.forEach { rawValue ->
+        val safeName = "`$rawValue`"
+        val getter = FunSpec.getterBuilder()
+            .addModifiers(KModifier.INLINE)
+            .addStatement("return %S.%M().unsafeCast()", rawValue, toJsStringMember)
+            .build()
+
+        val property = PropertySpec.builder(safeName, className)
+            .getter(getter)
+            .build()
+
+        objectBuilder.addProperty(property)
+    }
+    return objectBuilder.build()
+}

@@ -50,6 +50,24 @@ class InterfaceCollector(private val typeResolver: TypeResolver) : WebIDLBaseVis
         return super.visitInterfaceMember(ctx)
     }
 
+    override fun visitDictionaryMemberRest(ctx: WebIDLParser.DictionaryMemberRestContext): Set<InterfaceMember> {
+        val name = ctx.IDENTIFIER_WEBIDL()?.text?.trim() ?: return super.visitDictionaryMemberRest(ctx)
+        val typeCtx = ctx.typeWithExtendedAttributes() ?: ctx.type_()
+        val type = typeCtx?.let { typeResolver.visit(it) } ?: return super.visitDictionaryMemberRest(ctx)
+        val defaultValue = ctx.default_()?.cleanDefValue
+
+        // (Optional) For now
+        // val isRequired = ctx.getChild(0)?.text == "required"
+
+        return setOf(
+            InterfaceMember.VariableDescriptor(
+                name = name,
+                type = type,
+                defaultValue = defaultValue // For now disable it, but in general default value will be used only for factory methods
+            )
+        )
+    }
+
     private fun WebIDLParser.AttributeRestContext.extractVariable(): Set<InterfaceMember>? {
         val attrName = attributeName()?.IDENTIFIER_WEBIDL()?.text?.trim() ?: return null
         val attrType = typeWithExtendedAttributes()?.let { typeResolver.visit(it) } ?: return null
@@ -94,131 +112,13 @@ class InterfaceCollector(private val typeResolver: TypeResolver) : WebIDLBaseVis
         return InterfaceMember.VariableDescriptor(
             name = argumentName()?.IDENTIFIER_WEBIDL()?.text?.trim().orEmpty(),
             type = type,
-            defaultValue = default_()?.defaultValue()?.text?.trim()
+            defaultValue = default_()?.cleanDefValue
         )
     }
-}
 
-//    override fun visitPartialInterfaceMembers(ctx: WebIDLParser.PartialInterfaceMembersContext): Set<InterfaceMember> {
-//        val members = mutableSetOf<InterfaceMember>()
-//
-//        ctx.partialInterfaceMember()
-//            ?.let { visit(it) }
-//            ?.let { members += it }
-//
-//        var membersCtx = ctx.partialInterfaceMembers()
-//        while (membersCtx != null) {
-//            membersCtx.partialInterfaceMember()
-//                ?.let { visit(it) }
-//                ?.let { members += it }
-//
-//            membersCtx = membersCtx.partialInterfaceMembers()
-//        }
-//
-//        return members
-//    }
-//
-//    override fun visitPartialInterfaceMember(ctx: WebIDLParser.PartialInterfaceMemberContext): Set<InterfaceMember> {
-//        ctx.readonlyMember()?.let { valContext ->
-//            valContext.readonlyMemberRest()?.attributeRest()?.let { attrContext ->
-//                val attrName = attrContext.name ?: return super.visitPartialInterfaceMember(ctx)
-//                val attrType = attrContext.type ?: return super.visitPartialInterfaceMember(ctx)
-//
-//                return setOf(InterfaceMember.VariableDescriptor(name = attrName, type = attrType))
-//            }
-//        }
-//        ctx.readWriteAttribute()?.let { varContext ->
-//            varContext.attributeRest()?.let { attrContext ->
-//                val attrName = attrContext.name ?: return super.visitPartialInterfaceMember(ctx)
-//                val attrType = attrContext.type ?: return super.visitPartialInterfaceMember(ctx)
-//
-//                return setOf(InterfaceMember.VariableDescriptor(name = attrName, type = attrType))
-//            }
-//        }
-//        ctx.operation()?.let { operationsContext ->
-//            // Let's hope we will not have special operations (┬┬﹏┬┬)
-//            operationsContext.regularOperation()?.let { functionContext ->
-//                val returnType = functionContext.type_()?.let { typeResolver.visit(it) } ?: return super.visitPartialInterfaceMember(ctx)
-//                val funName = functionContext.operationRest()?.optionalOperationName()?.operationName()
-//                    ?.IDENTIFIER_WEBIDL()?.text?.trim() ?: return super.visitPartialInterfaceMember(ctx)
-//                val argsCtx = functionContext.operationRest()?.argumentList()
-//                val arg = argsCtx?.argument()?.argumentRest()?.toAstMember()
-//                val collectedArgs = mutableSetOf<InterfaceMember.VariableDescriptor>().apply { arg?.let(::add) }
-//
-//                var args = argsCtx?.arguments()
-//                while (args != null) {
-//                    val argDescriptor = args.argument()?.argumentRest()?.toAstMember()
-//                    argDescriptor?.let(collectedArgs::add)
-//                    args = args.arguments()
-//                }
-//
-//                return setOf(
-//                    InterfaceMember.FunctionDescriptor(
-//                        name = funName,
-//                        returnType = returnType,
-//                        parameters = collectedArgs
-//                    )
-//                )
-//            }
-//        }
-//        return super.visitPartialInterfaceMember(ctx)
-//    }
-//
-//    override fun visitMixinMembers(ctx: WebIDLParser.MixinMembersContext): Set<InterfaceMember> {
-//        val members = mutableSetOf<InterfaceMember>()
-//
-//        ctx.mixinMember()
-//            ?.let { visit(it) }
-//            ?.let { members += it }
-//
-//        var membersCtx = ctx.mixinMembers()
-//        while (membersCtx != null) {
-//            membersCtx.mixinMember()
-//                ?.let { visit(it) }
-//                ?.let { members += it }
-//
-//            membersCtx = membersCtx.mixinMembers()
-//        }
-//
-//        return members
-//    }
-//
-//    override fun visitMixinMember(ctx: WebIDLParser.MixinMemberContext): Set<InterfaceMember> {
-//        ctx.attributeRest()?.let { variableContext ->
-//            val attrName = variableContext.name ?: return super.visitMixinMember(ctx)
-//            val attrType = variableContext.type ?: return super.visitMixinMember(ctx)
-//
-//            return setOf(InterfaceMember.VariableDescriptor(name = attrName, type = attrType))
-//        }
-//        ctx.regularOperation()?.let { functionContext ->
-//            val returnType = functionContext.type_()?.let { typeResolver.visit(it) } ?: return super.visitMixinMember(ctx)
-//            val funName = functionContext.operationRest()?.optionalOperationName()?.operationName()
-//                ?.IDENTIFIER_WEBIDL()?.text?.trim() ?: return super.visitMixinMember(ctx)
-//            val argsCtx = functionContext.operationRest()?.argumentList()
-//            val arg = argsCtx?.argument()?.argumentRest()?.toAstMember()
-//            val collectedArgs = mutableSetOf<InterfaceMember.VariableDescriptor>().apply { arg?.let(::add) }
-//
-//            var args = argsCtx?.arguments()
-//            while (args != null) {
-//                val argDescriptor = args.argument()?.argumentRest()?.toAstMember()
-//                argDescriptor?.let(collectedArgs::add)
-//                args = args.arguments()
-//            }
-//
-//            return setOf(
-//                InterfaceMember.FunctionDescriptor(
-//                    name = funName,
-//                    returnType = returnType,
-//                    parameters = collectedArgs
-//                )
-//            )
-//        }
-//
-//        return super.visitMixinMember(ctx)
-//    }
-//
-//    private val WebIDLParser.AttributeRestContext.name: String?
-//        get() = attributeName()?.IDENTIFIER_WEBIDL()?.text?.trim()
-//
-//    private val WebIDLParser.AttributeRestContext.type: Descriptor.TypeDescriptor?
-//        get() = typeWithExtendedAttributes()?.let { typeResolver.visit(it) }
+    private val WebIDLParser.Default_Context.cleanDefValue: String?
+        get() {
+            val rawText = defaultValue()?.text?.trim() ?: return null
+            return rawText.removeSurrounding("\"")
+        }
+}
